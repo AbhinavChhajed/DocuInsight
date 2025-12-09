@@ -1,0 +1,41 @@
+version: '3.8'
+services:
+  # 1. Database
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  # 2. Python AI Service
+  ai-service:
+    build: ./ai-service
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MONGO_URI=mongodb://mongo:27017/research-db
+
+  # 3. Node Backend
+  server:
+    build: ./server
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongo
+      - ai-service
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/research-db
+      - AI_SERVICE_URL=http://ai-service:8000
+
+  # 4. React Frontend
+  client:
+    build: ./client
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+
+volumes:
+  mongo-data:
